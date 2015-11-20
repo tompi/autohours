@@ -7,12 +7,13 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX" crossorigin="anonymous">
     <style>
-      .progress-filler {
-        float: left;
-        display: block;
-        height: 100%;
+      .progress-bar {
+        background-image: none;
       }
     </style>
+    <script src="https://fb.me/react-0.14.3.js"></script>
+    <script src="https://fb.me/react-dom-0.14.3.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
   </head>
   <body>
     <div class="container">
@@ -56,6 +57,31 @@
           </div>
         </div>
       </div>
+
+      <div class="well">
+        <div class="progress">
+      <div id="content"></div>
+    </div>
+    </div>
+      <script type="text/babel">
+        var Bar = React.createClass({
+          render: function() {
+            var divStyle = {
+              width: this.props.percent + '%',
+              backgroundColor: this.props.background
+            };
+            return (
+              <div className="progress-bar" style={divStyle}>
+                {this.props.text}
+              </div>
+            )
+          }
+        });
+        ReactDOM.render(
+          <Bar text="hei" percent="20" background="#a3a3a3"/>,
+          document.getElementById('content')
+        );
+      </script>
 
       <div class="panel panel-default">
         <div class="panel-heading">
