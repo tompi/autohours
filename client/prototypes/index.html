@@ -6,6 +6,7 @@
     <title>Autohours prototype</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX" crossorigin="anonymous">
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
     <style>
       .progress-bar {
         background-image: none;
@@ -14,6 +15,7 @@
     <script src="https://fb.me/react-0.14.3.js"></script>
     <script src="https://fb.me/react-dom-0.14.3.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/leaflet.js"></script>
   </head>
   <body>
     <div class="container">
@@ -23,7 +25,7 @@
           <div class="well">
             <h1>
               <div class="row">
-              <div class="col-md-9 col-xs-12">
+              <div class="col-sm-9 col-xs-12">
                 Auto Hours<br>
                 <small>No more guessing how long you worked</small>
               </div>
@@ -58,15 +60,14 @@
         </div>
       </div>
 
-      <div class="well">
-        <div id="content"></div>
-      </div>
+      <div id="content"></div>
+      <div style="height: 200px;" id="map"></div>
       <script type="text/babel">
         var Bar = React.createClass({
           render: function() {
             var divStyle = {
               width: this.props.interval.percent + '%',
-              backgroundColor: this.props.interval.background
+              backgroundColor: this.props.interval.color
             };
             return (
               <div className="progress-bar" style={divStyle}>
@@ -75,12 +76,12 @@
             );
           }
         });
-        var StackedBars = React.createClass({
+        var Day = React.createClass({
           render: function() {
             return (
               <div className="progress">
                 {
-                  this.props.intervals.map((interval, ix) => {
+                  this.props.locations.map((interval, ix) => {
                     return <Bar interval={interval} key={ix}/>
                   })
                 }
@@ -88,100 +89,85 @@
             );
           }
         });
-        var intervals = [
-          {percent: 22, background: '#f5a3a3', text: 'hei'},
-          {percent: 3, background: 'none', text: ''},
-          {percent: 50, background: '#acacac', text: 'ho'},
-          {percent: 3, background: 'none', text: ''},
-          {percent: 50, background: '#343434', text: 'ho'}
+        var DayPanel = React.createClass({
+          render: function() {
+            return (
+              <div className="panel panel-default">
+                <div className="panel-heading">
+                  <h3 className="panel-title">{this.props.title}</h3>
+                </div>
+                <div className="panel-body">
+                  {
+                    this.props.days.map(day => {
+                        return (
+                          <div className="row" key={day.name}>
+                            <div className="col-xs-1">{day.name}</div>
+                            <div className="col-xs-11">
+                              <Day locations={day.locations}/>
+                            </div>
+                          </div>
+                        );
+                    })
+                  }
+                </div>
+              </div>
+            );
+          }
+        });
+        var days = [
+          {
+            name: 'Mon',
+            locations: [
+              {percent: 22, color: '#f5a3a3', text: 'hei'},
+              {percent: 3, color: 'none', text: ''},
+              {percent: 50, color: '#acacac', text: 'ho'},
+              {percent: 3, color: 'none', text: ''},
+              {percent: 22, color: '#3C633C', text: 'ho'}
+            ]
+          },
+          {
+            name: 'Tue',
+            locations: [
+              {percent: 27, color: '#f5a3a3', text: 'hei'},
+              {percent: 3, color: 'none', text: ''},
+              {percent: 40, color: '#acacac', text: 'ho'},
+              {percent: 3, color: 'none', text: ''},
+              {percent: 27, color: '#3C633C', text: 'ho'}
+            ]
+          }
         ];
         ReactDOM.render(
-          <StackedBars intervals={intervals}/>,
+          <DayPanel days={days} title="January 1th-7th"/>,
           document.getElementById('content')
         );
-      </script>
 
-      <div class="panel panel-default">
-        <div class="panel-heading">
-          <h3 class="panel-title">January 1th-7th</h3>
-        </div>
-        <div class="panel-body">
-          <div class="row">
-            <div class="col-xs-1">Mon</div>
-            <div class="col-xs-11">
-              <div class="progress">
-                <div class="progress-bar" style="width: 20%">00:00 - 07:45</div>
-                <div class="progress-filler" style="width: 2%;"></div>
-                <div class="progress-bar progress-bar-success" style="width: 35%">08:00 - 16:00</div>
-                <div class="progress-filler" style="width: 10%;"></div>
-                <div class="progress-bar" style="width: 33%">17:00 - 24:00</div>
-              </div>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-xs-1">Monday</div>
-            <div class="col-xs-11">
-              <div class="progress">
-                <div class="progress-bar" style="width: 20%">00:00 - 07:45</div>
-                <div class="progress-filler" style="width: 2%;"></div>
-                <div class="progress-bar progress-bar-success" style="width: 35%">08:00 - 16:00</div>
-                <div class="progress-filler" style="width: 10%;"></div>
-                <div class="progress-bar" style="width: 33%">17:00 - 24:00</div>
-              </div>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-xs-1">Tuesday</div>
-            <div class="col-xs-11">
-              <div class="progress">
-                <div class="progress-bar" style="width: 20%">00:00 - 07:45</div>
-                <div class="progress-filler" style="width: 2%;"></div>
-                <div class="progress-bar progress-bar-success" style="width: 35%">08:00 - 16:00</div>
-                <div class="progress-filler" style="width: 10%;"></div>
-                <div class="progress-bar" style="width: 33%">17:00 - 24:00</div>
-              </div>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-xs-1">Wednesday</div>
-            <div class="col-xs-11">
-              <div class="progress">
-                <div class="progress-bar" style="width: 25%">00:00 - 08:45</div>
-                <div class="progress-filler" style="width: 2%;"></div>
-                <div class="progress-bar progress-bar-success" style="width: 35%">09:00 - 17:00</div>
-                <div class="progress-filler" style="width: 10%;"></div>
-                <div class="progress-bar" style="width: 28%">18:00 - 24:00</div>
-              </div>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-xs-1">Thursday</div>
-            <div class="col-xs-11">
-              <div class="progress">
-                <div class="progress-bar" style="width: 20%">00:00 - 07:45</div>
-                <div class="progress-filler" style="width: 2%;"></div>
-                <div class="progress-bar progress-bar-success" style="width: 35%">08:00 - 16:00</div>
-                <div class="progress-filler" style="width: 10%;"></div>
-                <div class="progress-bar" style="width: 33%">17:00 - 24:00</div>
-              </div>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-xs-1">Friday</div>
-            <div class="col-xs-11">
-              <div class="progress">
-                <div class="progress-bar" style="width: 27%">00:00 - 09:45</div>
-                <div class="progress-filler" style="width: 5%;"></div>
-                <div class="progress-bar progress-bar-warning" style="width: 15%">10:00 - 14:00</div>
-                <div class="progress-filler" style="width: 10%;"></div>
-                <div class="progress-bar" style="width: 14%">17:00 - 20:00</div>
-                <div class="progress-filler" style="width: 10%;"></div>
-                <div class="progress-bar progress-bar-warning" style="width: 19%">20:00 - 24:00</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        // Map stuff
+        var locations = [
+          { color: '#3C633C', "lat":58.9403823, "lon":5.7410811 },
+          { color: '#f5a3a3', "lat":58.9502506, "lon":5.725163 },
+          { color: '#acacac', "lat":58.9419214,"lon":5.7453025 }
+        ];
+        var map = L.map('map');
+        var group = new L.featureGroup(
+          locations.map(function(location) {
+            return L.circle([location.lat, location.lon], 100, {
+              color: location.color,
+              fillColor: location.color,
+              fillOpacity: 0.6
+            }).addTo(map);
+          })
+        );
+        map.fitBounds(group.getBounds());
+
+        L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6IjZjNmRjNzk3ZmE2MTcwOTEwMGY0MzU3YjUzOWFmNWZhIn0.Y8bhBaUMqFiPrDRW9hieoQ', {
+        			maxZoom: 18,
+        			attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
+        				'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+        				'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+        			id: 'mapbox.streets'
+        		}).addTo(map);
+
+      </script>
     </div>
   </body>
 </html>
