@@ -4,7 +4,8 @@
   "description": "Parse google location data",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "webpack-dev-server --progress --colors --hot"
   },
   "author": "Thomas Haukland <thomas.haukland@gmail.com> (https://github.com/tompi)",
   "license": "ISC",
@@ -13,16 +14,17 @@
     "colors": "^1.1.2",
     "event-stream": "^3.3.2",
     "geolib": "^2.0.18",
-    "moment": "^2.10.6"
+    "leaflet": "^0.7.7",
+    "moment": "^2.10.6",
+    "react": "^0.14.3",
+    "react-dom": "^0.14.3"
   },
   "devDependencies": {
-    "babel-core": "^6.1.21",
+    "babel-core": "^6.3.26",
     "babel-loader": "^6.2.0",
-    "history": "^1.13.1",
-    "react": "^0.14.2",
-    "react-hot-loader": "^1.3.0",
-    "react-router": "^1.0.0",
-    "webpack": "^1.12.6",
-    "webpack-dev-server": "^1.12.1"
+    "babel-preset-es2015": "^6.3.13",
+    "babel-preset-react": "^6.3.13",
+    "webpack": "^1.12.9",
+    "webpack-dev-server": "^1.14.0"
   }
 }
