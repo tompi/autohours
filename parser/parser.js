@@ -1,65 +1,99 @@
 var fs = require('fs');
 var JSONStream = require('JSONStream');
 var eventStream = require('event-stream');
-var colors = require('coloras/safe');
+var colors = require('colors/safe');
 var locationTransformStream = require('./locationTransformStream');
 var moment = require('moment');
+var input = require('./input')
+var Promise = require('es6-promise').Promise;
 
 var stays = 0;
 var locations = 0;
 var lastStay,currentStay;
 var locationHistoryFile = process.argv[2];
-var now = new Date();
-var year = now.getFullYear();
-var month = now.getMonth() + 1;
-// Less than 1h not considered
-var minimumStay = 1000 * 60 * 60;
-var header = 'Email,Client,Project,Description,Start date,Start time,duration\n';
-var prefix = 'thomas.haukland@gmail.com,Skagenfondene,CIP,CIP,';
 
-fs.createReadStream(locationHistoryFile)
-  .pipe(JSONStream.parse('locations.*'))
-  .on('data', () => { locations++; })
-  .on('end', () => {
-    console.log(colors.cyan('Number of locations: ' + colors.bold(locations)));
-    console.log(colors.blue('Number of stays: ' + colors.bold(stays)));
-    console.log(colors.green('First stay: ' + formatDate(currentStay)));
-    console.log(colors.red('Last stay: ' + formatDate(lastStay)));
-  })
-  .pipe(locationTransformStream.createStream())
-  .pipe(eventStream.through(function(stay) {
-    if (stays === 0 ) {
-      this.push(header);
-    }
-    stays++;
-    // Expand stays with year/month/day
-    var m = new Date(parseInt(stay.from));
-    stay.year = m.getFullYear();
-    stay.date = m.getDate();
-    stay.month = m.getMonth();
-    var startHour = m.getHours();
-    var startMinutes = m.getMinutes();
-    var startTime = moment(m).format('HH:mm:ss');
+var promise = new Promise((resolve, reject) => {
+  input.getParameters(function(answers) {
+    // Stays to ask user about
+    var possibleStays = [];
+    // Less than 1h not considered
+    var minimumStay = 1000 * 60 * 60;
+    // Calculate the first possible date to contain stays of interest
+    var firstPossibleDate = new Date(answers.year, answers.month -1, 1);
 
-    if (stay.year == year && stay.month == month && startHour > 6 && startHour < 17) {
-      var diff = moment(parseInt(stay.to)).diff(moment(parseInt(stay.from)));
-      if (diff > minimumStay) {
-        stay.duration = moment.utc(diff).format('HH:mm:ss');
-        //console.log(stay.duration);
-        // Convert to normal stream(chunk it)
-        //this.push(JSON.stringify(stay) + ',\n');
-        this.push(prefix + moment(m).format('YYYY-MM-DD') + ',' + startTime + ',' + stay.duration + '\n');
-      }
-    }
-    // Locations are in reverse order, last on top
-    currentStay = stay;
-    if (stays === 1) {
-      lastStay = stay;
-    }
-  }))
-  // Write to file
-  .pipe(fs.createWriteStream('stays.json', { flags: 'w' }));
+    var stream = fs.createReadStream(locationHistoryFile);
+    stream
+      .pipe(JSONStream.parse('locations.*'))
+      .on('data', () => { locations++; })
+      .on('end', () => {
+        console.log(colors.cyan('Number of locations: ' + colors.bold(locations)));
+        console.log(colors.blue('Number of stays: ' + colors.bold(stays)));
+        console.log(colors.green('First stay: ' + formatDate(currentStay)));
+        console.log(colors.red('Last stay: ' + formatDate(lastStay)));
+      })
+      .pipe(locationTransformStream.createStream())
+      .pipe(eventStream.through(function(stay) {
+        stays++;
+        // Get from as date
+        var m = new Date(parseInt(stay.from));
+        // Since location files start with newest first, we can abort if
+        // this date is older than forstPossibleDate
+        if (m < firstPossibleDate) {
+          resolve({answers: answers, possibleStays: possibleStays});
+          stream.unpipe();
+          return;
+        }
+        // Expand stays with year/month/day
+        stay.year = m.getFullYear();
+        stay.date = m.getDate();
+        stay.month = m.getMonth();
+        var startHour = m.getHours();
+        var startMinutes = m.getMinutes();
+        var startTime = moment(m).format('HH:mm:ss');
+        //console.log(answers);
+        //console.log(stay);
+        if (stay.year == answers.year && stay.month == answers.month-1 && startHour > 6 && startHour < 17) {
+          var diff = moment(parseInt(stay.to)).diff(moment(parseInt(stay.from)));
+          if (diff > minimumStay) {
+            stay.duration = moment.utc(diff).format('HH:mm:ss');
+            stay.formattedStartTime = startTime;
+            stay.formattedStartDate = moment(m).format('YYYY-MM-DD');
+            possibleStays.push(stay);
+          }
+        }
+        // Locations are in reverse order, last on top
+        currentStay = stay;
+        if (stays === 1) {
+          lastStay = stay;
+        }
+      }));
+  });
+});
+
+promise.then(( result ) => {
+  confirmStays(result.answers, result.possibleStays);
+});
+
 
 function formatDate(stay) {
   return colors.bold(stay.year + '-' + (stay.month+1) + '-' + stay.date);
+}
+
+function confirmStays(answers, possibleStays) {
+  var prefix = answers.email + ',' + answers.client + ',' +
+               answers.project + ',' + answers.description + ',';
+
+  var promises = [];
+  var outputFileStream = fs.createWriteStream("output.csv");
+  outputFileStream.once('open', function(fd) {
+    outputFileStream.write('Email,Client,Project,Description,Start date,Start time,duration\n');
+
+    possibleStays.forEach((stay) => {
+      // Ask user
+      outputFileStream.write(prefix + stay.formattedStartDate + ',' +
+          stay.formattedStartTime + ',' + stay.duration + '\n');
+    });
+    outputFileStream.end();
+  });
+
 }

@@ -20,10 +20,41 @@ var questions = [
     "name": "email",
     "message": "Email",
     "default": "thomas.haukland@gmail.com"
+  },
+  {
+    "type": "input",
+    "name": "client",
+    "message": "Client",
+    "default": "Skagenfondene"
+  },
+  {
+    "type": "input",
+    "name": "project",
+    "message": "Project",
+    "default": "CIP"
+  },
+  {
+    "type": "input",
+    "name": "description",
+    "message": "Description",
+    "default": "CIP"
   }
 ];
 
-inquirer.prompt(questions, function( answers ) {
-    console.log(answers.year);
-    console.log(answers.month);
-});
+exports.getParameters = (callback) => {
+  inquirer.prompt(questions, callback);
+};
+
+exports.confirm = (stay, callback) => {
+  var confirmQuestion = {
+    "type": "confirm",
+    "name": "confirm",
+    "message": "Really?",
+    "default": true
+  }
+  inquirer.prompt(confirmQuestion, (answers) => {
+    if (answers.confirm) {
+      callback();
+    }
+  });
+}
