@@ -1,7 +1,7 @@
 var fs = require('fs');
 var JSONStream = require('JSONStream');
 var eventStream = require('event-stream');
-var colors = require('colors/safe');
+var colors = require('coloras/safe');
 var locationTransformStream = require('./locationTransformStream');
 var moment = require('moment');
 
@@ -9,8 +9,9 @@ var stays = 0;
 var locations = 0;
 var lastStay,currentStay;
 var locationHistoryFile = process.argv[2];
-var year = process.argv[3];
-var month = process.argv[4];
+var now = new Date();
+var year = now.getFullYear();
+var month = now.getMonth() + 1;
 // Less than 1h not considered
 var minimumStay = 1000 * 60 * 60;
 var header = 'Email,Client,Project,Description,Start date,Start time,duration\n';
@@ -39,11 +40,7 @@ fs.createReadStream(locationHistoryFile)
     var startHour = m.getHours();
     var startMinutes = m.getMinutes();
     var startTime = moment(m).format('HH:mm:ss');
-    //console.log("argYear: " + year);
-    //console.log("argMonth: " + month);
-    //console.log(startHour);
-    //console.log(stay.year);
-    //console.log(stay.month);
+
     if (stay.year == year && stay.month == month && startHour > 6 && startHour < 17) {
       var diff = moment(parseInt(stay.to)).diff(moment(parseInt(stay.from)));
       if (diff > minimumStay) {
