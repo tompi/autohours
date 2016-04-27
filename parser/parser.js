@@ -10,7 +10,6 @@ var Promise = require('es6-promise').Promise;
 var stays = 0;
 var locations = 0;
 var lastStay,currentStay;
-var locationHistoryFile = process.argv[2];
 
 var promise = new Promise((resolve, reject) => {
   input.getParameters(function(answers) {
@@ -21,7 +20,7 @@ var promise = new Promise((resolve, reject) => {
     // Calculate the first possible date to contain stays of interest
     var firstPossibleDate = new Date(answers.year, answers.month -1, 1);
 
-    var stream = fs.createReadStream(locationHistoryFile);
+    var stream = fs.createReadStream(answers.infile);
     stream
       .pipe(JSONStream.parse('locations.*'))
       .on('data', () => { locations++; })
@@ -84,7 +83,7 @@ function confirmStays(answers, possibleStays) {
                answers.project + ',' + answers.description + ',';
 
   var promises = [];
-  var outputFileStream = fs.createWriteStream("output.csv");
+  var outputFileStream = fs.createWriteStream(answers.outfile);
   outputFileStream.once('open', function(fd) {
     outputFileStream.write('Email,Client,Project,Description,Start date,Start time,duration\n');
 
