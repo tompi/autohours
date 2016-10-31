@@ -4,25 +4,25 @@ var eventStream = require('event-stream');
 var currentLocation = null;
 var prevLocation = null;
 var onTheMove = false;
-var newStay, distance, ms;
+var distance, ms;
 
 // Calculate every stay at one location(within a 200m radius)
-// that lasted for more than 10 minutes
+// that lasted for more than 5 minutes
 
 // The input stream should consist of google location history points
 exports.createStream = () => {
   return eventStream.map((data, callback) => {
-    newStay = null;
+    var newStay = null;
     data.latitude = data.latitudeE7/10000000;
     data.longitude = data.longitudeE7/10000000;
     if (currentLocation) {
       distance = geolib.getDistance(prevLocation, data);
-      if (distance > 200) {
+      if (distance > 200 && data.accuracy < 100) {
         if (!onTheMove) {
           onTheMove = true;
           ms = currentLocation.timestampMs - prevLocation.timestampMs;
-          // Dont count stays of less than 10 minutes
-          if (ms > 600000) {
+          // Dont count stays of less than 5 minutes
+          if (ms > (1000 * 60 * 5)) {
             newStay = {
               lat: currentLocation.latitude,
               lon: currentLocation.longitude,
@@ -43,9 +43,9 @@ exports.createStream = () => {
       onThemove = false;
     }
     prevLocation = data;
-    if (newStay) 
+    if (newStay)
       callback(null, newStay)
-    else 
+    else
       callback();
   });
 }

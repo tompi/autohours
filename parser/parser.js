@@ -9,26 +9,37 @@ var Promise = require('es6-promise').Promise;
 
 var stays = 0;
 var locations = 0;
-var lastStay,currentStay;
+var lastStay,currentStay,finished;
+
+function onFinish() {
+  if (!finished) {
+    finished = true;
+    console.log(colors.cyan('Number of locations: ' + colors.bold(locations)));
+    console.log(colors.blue('Number of stays: ' + colors.bold(stays)));
+    console.log(colors.green('First stay: ' + formatDate(currentStay)));
+    console.log(colors.red('Last stay: ' + formatDate(lastStay)));
+  }
+}
 
 var promise = new Promise((resolve, reject) => {
   input.getParameters(function(answers) {
     // Stays to ask user about
     var possibleStays = [];
-    // Less than 1h not considered
-    var minimumStay = 1000 * 60 * 60;
+    // Less than 10m not considered
+    var minimumStay = 1000 * 60 * 5;
     // Calculate the first possible date to contain stays of interest
     var firstPossibleDate = new Date(answers.year, answers.month -1, 1);
 
+    // Create input stream from user provided file
     var stream = fs.createReadStream(answers.infile);
     stream
+      // Parse as json and only json under "locations"
       .pipe(JSONStream.parse('locations.*'))
-      .on('data', () => { locations++; })
-      .on('end', () => {
-        console.log(colors.cyan('Number of locations: ' + colors.bold(locations)));
-        console.log(colors.blue('Number of stays: ' + colors.bold(stays)));
-        console.log(colors.green('First stay: ' + formatDate(currentStay)));
-        console.log(colors.red('Last stay: ' + formatDate(lastStay)));
+      // Count number of locations
+      .on('data', (data) => {
+        locations++;
+        //var m = new Date(parseInt(data.timestampMs));
+        //console.log(m);
       })
       .pipe(locationTransformStream.createStream())
       .pipe(eventStream.through(function(stay) {
@@ -40,6 +51,7 @@ var promise = new Promise((resolve, reject) => {
         if (m < firstPossibleDate) {
           resolve({answers: answers, possibleStays: possibleStays});
           stream.unpipe();
+          onFinish();
           return;
         }
         // Expand stays with year/month/day
